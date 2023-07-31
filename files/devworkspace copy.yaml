@@ -1,0 +1,99 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: DevWorkspace
+objects:  
+ -      apiVersion: workspace.devfile.io/v1alpha2
+        kind: DevWorkspace
+        metadata:
+          annotations:
+            che.eclipse.org/che-editor: che-incubator/che-code/insiders
+            che.eclipse.org/devfile-source: |
+              scm:
+                repo: 'https://github.com/MazArslan/demo-web.git'
+                fileName: devfile.yaml
+              factory:
+                params: 'url=https://github.com/MazArslan/demo-web'
+          name: web-frontend
+          namespace: ${USERNAME}-devspaces
+          finalizers:
+            - storage.controller.devfile.io
+            - rbac.controller.devfile.io
+        spec:
+          routingClass: che
+          started: true
+          template:
+            attributes:
+              controller.devfile.io/devworkspace-config:
+                name: devworkspace-config
+                namespace: openshift-operators
+              controller.devfile.io/storage-type: per-user
+              dw.metadata.annotations:
+                che.eclipse.org/che-editor: che-incubator/che-code/insiders
+                che.eclipse.org/devfile-source: |
+                  scm:
+                    repo: 'https://github.com/MazArslan/demo-web.git'
+                    fileName: devfile.yaml
+                  factory:
+                    params: 'url=https://github.com/MazArslan/demo-web'
+                che.eclipse.org/last-updated-timestamp: '2023-02-16T10:32:33.746Z'
+            components:
+              - container:
+                  env:
+                    - name: CHE_DASHBOARD_URL
+                      value: >-
+                        https://devspaces.apps.cluster-79bwx.79bwx.sandbox657.opentlc.com
+                    - name: CHE_PLUGIN_REGISTRY_URL
+                      value: >-
+                        https://devspaces.apps.cluster-79bwx.79bwx.sandbox657.opentlc.com/plugin-registry/v3
+                    - name: CHE_PLUGIN_REGISTRY_INTERNAL_URL
+                      value: http://plugin-registry.openshift-operators.svc:8080/v3
+                    - name: OPENVSX_REGISTRY_URL
+                      value: https://open-vsx.org
+                  memoryRequest: 256Mi
+                  sourceMapping: /projects
+                  cpuLimit: 500m
+                  volumeMounts:
+                    - name: m2
+                      path: /home/user/.m2
+                  memoryLimit: 4Gi
+                  image: >-
+                    registry.redhat.io/devspaces/udi-rhel8@sha256:ac5aaba0bbf1caa7f23205ab837e3029ff9f605211ebf38bdf4b9f1b8fb1ba83
+                  endpoints:
+                    - exposure: public
+                      name: web
+                      protocol: tcp
+                      targetPort: 8081
+                name: tools
+              - name: m2
+                volume:
+                  size: 1G
+              - container:
+                  endpoints:
+                    - exposure: none
+                      name: backend
+                      protocol: http
+                      targetPort: 8080
+                  env:
+                    - name: CHE_DASHBOARD_URL
+                      value: >-
+                        https://devspaces.apps.cluster-79bwx.79bwx.sandbox657.opentlc.com
+                    - name: CHE_PLUGIN_REGISTRY_URL
+                      value: >-
+                        https://devspaces.apps.cluster-79bwx.79bwx.sandbox657.opentlc.com/plugin-registry/v3
+                    - name: CHE_PLUGIN_REGISTRY_INTERNAL_URL
+                      value: http://plugin-registry.openshift-operators.svc:8080/v3
+                    - name: OPENVSX_REGISTRY_URL
+                      value: https://open-vsx.org
+                  image: quay.io/marslan/springboot-backend
+                  memoryLimit: 3Gi
+                  sourceMapping: /projects
+                name: backend-h2
+            projects:
+              - git:
+                  remotes:
+                    origin: https://github.com/MazArslan/demo-web.git
+                name: demo-web
+parameters:
+- description: Username
+  name: USERNAME

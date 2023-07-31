@@ -3,97 +3,161 @@ kind: Template
 metadata:
   name: DevWorkspace
 objects:  
- -      apiVersion: workspace.devfile.io/v1alpha2
-        kind: DevWorkspace
-        metadata:
-          annotations:
-            che.eclipse.org/che-editor: che-incubator/che-code/insiders
+  - apiVersion: workspace.devfile.io/v1alpha2
+    kind: DevWorkspace
+    metadata:
+      annotations:
+        che.eclipse.org/che-editor: che-code-web-frontend
+        che.eclipse.org/devfile: |
+          schemaVersion: 2.1.0
+          metadata:
+            name: web-frontend
+            namespace: ${USERNAME}-devspaces
+          components:
+            - name: tools
+              container:
+                image: >-
+                  registry.redhat.io/devspaces/udi-rhel8@sha256:ac5aaba0bbf1caa7f23205ab837e3029ff9f605211ebf38bdf4b9f1b8fb1ba83
+                memoryLimit: 1Gi
+                memoryRequest: 512Mi
+                cpuRequest: 200m
+                endpoints:
+                  - exposure: public
+                    name: web
+                    protocol: tcp
+                    targetPort: 8081
+                volumeMounts:
+                  - name: m2
+                    path: /home/user/.m2
+            - name: m2
+              volume:
+                size: 1G
+            - name: backend-h2
+              container:
+                memoryRequest: 512Mi
+                memoryLimit: 1Gi
+                cpuRequest: 100m
+                image: quay.io/marslan/springboot-backend
+                endpoints:
+                  - exposure: none
+                    name: backend
+                    protocol: http
+                    targetPort: 8080
+          projects:
+            - name: demo-web
+              git:
+                remotes:
+                  origin: https://github.com/MazArslan/demo-web.git
+          attributes:
+            dw.metadata.annotations:
+              che.eclipse.org/devfile-source: |
+                scm:
+                  repo: https://github.com/MazArslan/demo-web.git
+                  fileName: devfile.yaml
+                factory:
+                  params: url=https://github.com/MazArslan/demo-web
+        che.eclipse.org/last-updated-timestamp: '2023-07-31T14:10:45.622Z'
+        controller.devfile.io/started-at: '1690812667510'
+      name: web-frontend
+      namespace: ${USERNAME}-devspaces
+      finalizers:
+        - storage.controller.devfile.io
+        - rbac.controller.devfile.io
+      labels:
+        controller.devfile.io/creator: 784387af-673b-407b-bc78-832d6861f6f1
+        demo: scaling
+    spec:
+      contributions:
+        - kubernetes:
+            name: che-code-web-frontend
+          name: editor
+      routingClass: che
+      started: true
+      template:
+        attributes:
+          controller.devfile.io/devworkspace-config:
+            name: devworkspace-config
+            namespace: openshift-operators
+          controller.devfile.io/scc: container-build
+          controller.devfile.io/storage-type: per-user
+          dw.metadata.annotations:
             che.eclipse.org/devfile-source: |
               scm:
-                repo: 'https://github.com/MazArslan/demo-web.git'
+                repo: https://github.com/MazArslan/demo-web.git
                 fileName: devfile.yaml
               factory:
-                params: 'url=https://github.com/MazArslan/demo-web'
-          name: web-frontend
-          namespace: ${USERNAME}-devspaces
-          finalizers:
-            - storage.controller.devfile.io
-            - rbac.controller.devfile.io
-        spec:
-          routingClass: che
-          started: true
-          template:
-            attributes:
-              controller.devfile.io/devworkspace-config:
-                name: devworkspace-config
-                namespace: openshift-operators
-              controller.devfile.io/storage-type: per-user
-              dw.metadata.annotations:
-                che.eclipse.org/che-editor: che-incubator/che-code/insiders
-                che.eclipse.org/devfile-source: |
-                  scm:
-                    repo: 'https://github.com/MazArslan/demo-web.git'
-                    fileName: devfile.yaml
-                  factory:
-                    params: 'url=https://github.com/MazArslan/demo-web'
-                che.eclipse.org/last-updated-timestamp: '2023-02-16T10:32:33.746Z'
-            components:
-              - container:
-                  env:
-                    - name: CHE_DASHBOARD_URL
-                      value: >-
-                        https://devspaces.apps.cluster-79bwx.79bwx.sandbox657.opentlc.com
-                    - name: CHE_PLUGIN_REGISTRY_URL
-                      value: >-
-                        https://devspaces.apps.cluster-79bwx.79bwx.sandbox657.opentlc.com/plugin-registry/v3
-                    - name: CHE_PLUGIN_REGISTRY_INTERNAL_URL
-                      value: http://plugin-registry.openshift-operators.svc:8080/v3
-                    - name: OPENVSX_REGISTRY_URL
-                      value: https://open-vsx.org
-                  memoryRequest: 256Mi
-                  sourceMapping: /projects
-                  cpuLimit: 500m
-                  volumeMounts:
-                    - name: m2
-                      path: /home/user/.m2
-                  memoryLimit: 4Gi
-                  image: >-
-                    registry.redhat.io/devspaces/udi-rhel8@sha256:ac5aaba0bbf1caa7f23205ab837e3029ff9f605211ebf38bdf4b9f1b8fb1ba83
-                  endpoints:
-                    - exposure: public
-                      name: web
-                      protocol: tcp
-                      targetPort: 8081
-                name: tools
-              - name: m2
-                volume:
-                  size: 1G
-              - container:
-                  endpoints:
-                    - exposure: none
-                      name: backend
-                      protocol: http
-                      targetPort: 8080
-                  env:
-                    - name: CHE_DASHBOARD_URL
-                      value: >-
-                        https://devspaces.apps.cluster-79bwx.79bwx.sandbox657.opentlc.com
-                    - name: CHE_PLUGIN_REGISTRY_URL
-                      value: >-
-                        https://devspaces.apps.cluster-79bwx.79bwx.sandbox657.opentlc.com/plugin-registry/v3
-                    - name: CHE_PLUGIN_REGISTRY_INTERNAL_URL
-                      value: http://plugin-registry.openshift-operators.svc:8080/v3
-                    - name: OPENVSX_REGISTRY_URL
-                      value: https://open-vsx.org
-                  image: quay.io/marslan/springboot-backend
-                  memoryLimit: 3Gi
-                  sourceMapping: /projects
-                name: backend-h2
-            projects:
-              - git:
-                  remotes:
-                    origin: https://github.com/MazArslan/demo-web.git
-                name: demo-web
+                params: url=https://github.com/MazArslan/demo-web
+        components:
+          - attributes:
+              controller.devfile.io/merge-contribution: true
+            container:
+              cpuRequest: 200m
+              endpoints:
+                - exposure: public
+                  name: web
+                  protocol: tcp
+                  targetPort: 8081
+              env:
+                - name: CHE_DASHBOARD_URL
+                  value: >-
+                    https://devspaces.apps.cluster-7c4sw.7c4sw.sandbox1601.opentlc.com
+                - name: CHE_PLUGIN_REGISTRY_URL
+                  value: >-
+                    https://devspaces.apps.cluster-7c4sw.7c4sw.sandbox1601.opentlc.com/plugin-registry/v3
+                - name: CHE_PLUGIN_REGISTRY_INTERNAL_URL
+                  value: http://plugin-registry.openshift-operators.svc:8080/v3
+                - name: CLUSTER_CONSOLE_URL
+                  value: >-
+                    https://console-openshift-console.apps.cluster-7c4sw.7c4sw.sandbox1601.opentlc.com
+                - name: CLUSTER_CONSOLE_TITLE
+                  value: OpenShift console
+                - name: OPENVSX_REGISTRY_URL
+                  value: ''
+              image: >-
+                registry.redhat.io/devspaces/udi-rhel8@sha256:ac5aaba0bbf1caa7f23205ab837e3029ff9f605211ebf38bdf4b9f1b8fb1ba83
+              memoryLimit: 1Gi
+              memoryRequest: 512Mi
+              sourceMapping: /projects
+              volumeMounts:
+                - name: m2
+                  path: /home/user/.m2
+            name: tools
+          - name: m2
+            volume:
+              size: 1G
+          - container:
+              cpuRequest: 100m
+              endpoints:
+                - exposure: none
+                  name: backend
+                  protocol: http
+                  targetPort: 8080
+              env:
+                - name: CHE_DASHBOARD_URL
+                  value: >-
+                    https://devspaces.apps.cluster-7c4sw.7c4sw.sandbox1601.opentlc.com
+                - name: CHE_PLUGIN_REGISTRY_URL
+                  value: >-
+                    https://devspaces.apps.cluster-7c4sw.7c4sw.sandbox1601.opentlc.com/plugin-registry/v3
+                - name: CHE_PLUGIN_REGISTRY_INTERNAL_URL
+                  value: http://plugin-registry.openshift-operators.svc:8080/v3
+                - name: CLUSTER_CONSOLE_URL
+                  value: >-
+                    https://console-openshift-console.apps.cluster-7c4sw.7c4sw.sandbox1601.opentlc.com
+                - name: CLUSTER_CONSOLE_TITLE
+                  value: OpenShift console
+                - name: OPENVSX_REGISTRY_URL
+                  value: ''
+              image: quay.io/marslan/springboot-backend
+              memoryLimit: 1Gi
+              memoryRequest: 512Mi
+              sourceMapping: /projects
+            name: backend-h2
+        projects:
+          - git:
+              remotes:
+                origin: https://github.com/MazArslan/demo-web.git
+            name: demo-web
 parameters:
 - description: Username
   name: USERNAME
