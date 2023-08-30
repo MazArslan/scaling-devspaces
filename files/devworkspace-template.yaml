@@ -6,47 +6,52 @@ objects:
   - apiVersion: workspace.devfile.io/v1alpha2
     kind: DevWorkspaceTemplate
     metadata:
-      annotations:
-        che.eclipse.org/components-update-policy: managed
-        che.eclipse.org/plugin-registry-url: >-
-          https://devspaces.apps.cluster-wgtwf.wgtwf.sandbox1935.opentlc.com/plugin-registry/v3/plugins/eclipse/che-theia/latest/devfile.yaml
-      name: theia-workspace
-      namespace: ${USERNAME}-devspaces
+      name: che-code-web-frontend
+      namespace:  ${USERNAME}-devspaces
+    labels:
+      demo: scaling
     spec:
       commands:
         - apply:
-            component: remote-runtime-injector
+            component: che-code-injector
           id: init-container-command
+        - exec:
+            commandLine: >-
+              nohup /checode/entrypoint-volume.sh > /checode/entrypoint-logs.txt
+              2>&1 &
+            component: che-code-runtime-description
+          id: init-che-code-command
       components:
-        - attributes: {}
+        - attributes:
+            app.kubernetes.io/component: che-code-runtime
+            app.kubernetes.io/part-of: che-code.eclipse.org
+            controller.devfile.io/container-contribution: true
           container:
-            cpuRequest: 100m
+            cpuRequest: 30m
             env:
-              - name: THEIA_PLUGINS
-                value: local-dir:///plugins
-              - name: HOSTED_PLUGIN_HOSTNAME
-                value: 0.0.0.0
-              - name: HOSTED_PLUGIN_PORT
-                value: '3130'
-              - name: THEIA_HOST
-                value: 127.0.0.1
               - name: CHE_DASHBOARD_URL
-                value: https://devspaces.apps.cluster-wgtwf.wgtwf.sandbox1935.opentlc.com
+                value: https://devspaces.apps.cluster-7c4sw.7c4sw.sandbox1601.opentlc.com
               - name: CHE_PLUGIN_REGISTRY_URL
                 value: >-
-                  https://devspaces.apps.cluster-wgtwf.wgtwf.sandbox1935.opentlc.com/plugin-registry/v3
+                  https://devspaces.apps.cluster-7c4sw.7c4sw.sandbox1601.opentlc.com/plugin-registry/v3
               - name: CHE_PLUGIN_REGISTRY_INTERNAL_URL
                 value: http://plugin-registry.openshift-operators.svc:8080/v3
+              - name: CLUSTER_CONSOLE_URL
+                value: >-
+                  https://console-openshift-console.apps.cluster-7c4sw.7c4sw.sandbox1601.opentlc.com
+              - name: CLUSTER_CONSOLE_TITLE
+                value: OpenShift console
+              - name: OPENVSX_REGISTRY_URL
+                value: ''
+            memoryRequest: 256Mi
             sourceMapping: /projects
-            cpuLimit: 1500m
+            cpuLimit: 500m
             volumeMounts:
-              - name: plugins
-                path: /plugins
-              - name: theia-local
-                path: /home/theia/.theia
-            memoryLimit: 512M
+              - name: checode
+                path: /checode
+            memoryLimit: 1024Mi
             image: >-
-              registry.redhat.io/devspaces/theia-rhel8@sha256:0f550ba6a88ca8e29bbba1c41829013f88208f47c169f9d1db911866285c684d
+              registry.redhat.io/devspaces/udi-rhel8@sha256:b1f112760b2640b5e8612869536a000612837e8e247c74d3d99e9fcfbc56d2f3
             endpoints:
               - attributes:
                   cookiesAuthEnabled: true
@@ -54,129 +59,66 @@ objects:
                   type: main
                   urlRewriteSupported: true
                 exposure: public
-                name: theia
-                protocol: https
-                secure: false
-                targetPort: 3100
-              - attributes:
-                  cookiesAuthEnabled: true
-                  discoverable: false
-                  type: webview
-                  unique: true
-                  urlRewriteSupported: true
-                exposure: public
-                name: webviews
-                protocol: https
-                secure: false
-                targetPort: 3100
-              - attributes:
-                  cookiesAuthEnabled: true
-                  discoverable: false
-                  type: mini-browser
-                  unique: true
-                  urlRewriteSupported: true
-                exposure: public
-                name: mini-browser
+                name: che-code
                 protocol: https
                 secure: false
                 targetPort: 3100
               - attributes:
                   discoverable: false
-                  type: ide-dev
-                  urlRewriteSupported: true
+                  urlRewriteSupported: false
                 exposure: public
-                name: theia-dev
-                protocol: http
-                targetPort: 3130
-              - attributes:
-                  discoverable: false
-                  urlRewriteSupported: true
-                exposure: public
-                name: theia-redirect-1
+                name: code-redirect-1
                 protocol: http
                 targetPort: 13131
               - attributes:
                   discoverable: false
-                  urlRewriteSupported: true
+                  urlRewriteSupported: false
                 exposure: public
-                name: theia-redirect-2
+                name: code-redirect-2
                 protocol: http
                 targetPort: 13132
               - attributes:
                   discoverable: false
-                  urlRewriteSupported: true
+                  urlRewriteSupported: false
                 exposure: public
-                name: theia-redirect-3
+                name: code-redirect-3
                 protocol: http
                 targetPort: 13133
-              - attributes:
-                  cookiesAuthEnabled: true
-                  discoverable: false
-                  type: collocated-terminal
-                  urlRewriteSupported: true
-                exposure: public
-                name: terminal
-                protocol: wss
-                secure: false
-                targetPort: 3333
-            mountSources: true
-          name: theia-ide
-        - name: plugins
+          name: che-code-runtime-description
+        - name: checode
           volume: {}
-        - name: theia-local
-          volume: {}
-        - attributes: {}
-          container:
-            command:
-              - /go/bin/che-machine-exec
-              - '--url'
-              - 127.0.0.1:3333
-            cpuLimit: 500m
-            cpuRequest: 30m
-            env:
-              - name: CHE_DASHBOARD_URL
-                value: https://devspaces.apps.cluster-wgtwf.wgtwf.sandbox1935.opentlc.com
-              - name: CHE_PLUGIN_REGISTRY_URL
-                value: >-
-                  https://devspaces.apps.cluster-wgtwf.wgtwf.sandbox1935.opentlc.com/plugin-registry/v3
-              - name: CHE_PLUGIN_REGISTRY_INTERNAL_URL
-                value: http://plugin-registry.openshift-operators.svc:8080/v3
-            image: >-
-              registry.redhat.io/devspaces/machineexec-rhel8@sha256:30dff710196f7061066932a69ca4d3f680d88c95e2883dd5809d43d3e4a8e39f
-            memoryLimit: 128Mi
-            memoryRequest: 32Mi
-            sourceMapping: /projects
-          name: che-machine-exec
         - container:
-            cpuLimit: 500m
             cpuRequest: 30m
+            command:
+              - /entrypoint-init-container.sh
             env:
-              - name: PLUGIN_REMOTE_ENDPOINT_EXECUTABLE
-                value: /remote-endpoint/plugin-remote-endpoint
-              - name: REMOTE_ENDPOINT_VOLUME_NAME
-                value: remote-endpoint
               - name: CHE_DASHBOARD_URL
-                value: https://devspaces.apps.cluster-wgtwf.wgtwf.sandbox1935.opentlc.com
+                value: https://devspaces.apps.cluster-7c4sw.7c4sw.sandbox1601.opentlc.com
               - name: CHE_PLUGIN_REGISTRY_URL
                 value: >-
-                  https://devspaces.apps.cluster-wgtwf.wgtwf.sandbox1935.opentlc.com/plugin-registry/v3
+                  https://devspaces.apps.cluster-7c4sw.7c4sw.sandbox1601.opentlc.com/plugin-registry/v3
               - name: CHE_PLUGIN_REGISTRY_INTERNAL_URL
                 value: http://plugin-registry.openshift-operators.svc:8080/v3
-            image: >-
-              registry.redhat.io/devspaces/theia-endpoint-rhel8@sha256:e1b120b445f5ac484ba90c04357a2b218e4c990bbdbedbcdb347565c29cb1ea8
-            memoryLimit: 128Mi
+              - name: CLUSTER_CONSOLE_URL
+                value: >-
+                  https://console-openshift-console.apps.cluster-7c4sw.7c4sw.sandbox1601.opentlc.com
+              - name: CLUSTER_CONSOLE_TITLE
+                value: OpenShift console
+              - name: OPENVSX_REGISTRY_URL
+                value: ''
             memoryRequest: 32Mi
             sourceMapping: /projects
+            cpuLimit: 500m
             volumeMounts:
-              - name: plugins
-                path: /plugins
-              - name: remote-endpoint
-                path: /remote-endpoint
-          name: remote-runtime-injector
-        - name: remote-endpoint
-          volume:
-            ephemeral: true
+              - name: checode
+                path: /checode
+            memoryLimit: 256Mi
+            image: >-
+              registry.redhat.io/devspaces/code-rhel8@sha256:acceb48348adf47600c23d3f0ae9a9371d512645b1c277250ff182cf712141fe
+          name: che-code-injector
       events:
+        postStart:
+          - init-che-code-command
         preStart:
           - init-container-command
 parameters:

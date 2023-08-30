@@ -1,9 +1,10 @@
-# for i in {1.10}
-# do
-# oc login --server= -u user$i -p openshift
-# done
+for i in {2..11}
+do
+oc login --server= -u user$i -p openshift
+done
 
 # log onto the oc as cluster admin
+# oc login --server= -u user$i -p openshift
 
 for i in {2..11}
 do
@@ -21,9 +22,5 @@ do
     # Add missing secrets
     oc process -f user-preferences.yaml -p USERNAME=user$i | oc create -f - -n user$i-devspaces
     oc process -f user-profile.yaml -p USERNAME=user$i | oc create -f - -n user$i-devspaces
-
-    # Create the workspace
-    oc process -f devworkspace-template.yaml -p USERNAME=user$i | oc create -f - -n user$i-devspaces
-    oc process -f devworkspace.yaml -p USERNAME=user$i | oc create -f - -n user$i-devspaces &
     
 done
