@@ -22,11 +22,6 @@ To add users on openshift, `Administration` -> `custom resource definitions` -> 
 
 this creates another provider, but it works
 
-Don't forget to use the `users/login.sh` script. THIS TAKES LONG. 
-Else you will have a error when you run the `createProjects.sh` saying that user doesn't exist.   
-
-Don't forget to login as the cluster admin afterwards
-
 ## Dev Spaces Operator
 
 Install OpenShift Dev spaces in openshift operators And create a instance.
@@ -37,19 +32,17 @@ Install OpenShift Dev spaces in openshift operators And create a instance.
 
 it currently does it for 10 Users so please modify before use. 
 
+### Login
+The first step is to login as the user.
+update `files/createProject.sh` with your server information and the login information as cluster-admin
+it also applies the following yaml files
+
 ### Namespace
 The first stage to creating a automated process is to create a project/namespace.
 
 When you log into Openshift Dev Spaces, it creates a namespace with the name `<username>-devspaces`. It also adds labels the namespace, letting it know that it is a part of `che.eclipse.org` 
 
-`files/workspace/namespace.yaml` automates this step. 
-
-### Oauth Client Authentication
-
-Whenever a user logs onto Dev Workspaces for the first time, you are greeting the an OAuth request.
-`openshift-operators-client` wants to be able get full user access.
-
-`files/workspace/auth.yaml` provides a template to enable this to happen without a manual step.
+`files/namespace.yaml` automates this step. 
 
 ### Config Maps
 
@@ -58,8 +51,6 @@ However we are missing 3 configmaps, these are normally generated when a user in
 These config maps all relate to a developer experience. 
 these include:
 1. devworkspace-gitconfig
-2. workspace-preferences-configmap
-3. workspace-userdata-gitconfig-configmap
 
 these config maps include information about a user's name, username, email and git credentials.
 
@@ -71,14 +62,15 @@ Similarly, we are missing 3 secrets.
 they relate to:
 1. user-preferences
 2. user-profile
-3. workspace-credentials-secret
 
-see `files/secrets/` for more information
+see `files/user-preferences.yaml` and `files/user-profile.yaml` for more information
 
 ### Dev Space
 
 the final 2 things to create, is the dev workspace itself.
 this is split into 2 sections, a `DevWorkspaceTemplate` and `DevWorkspace`.
+
+run `createWorkspace.sh` 
 
 #### Workspace Template
 
